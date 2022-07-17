@@ -706,11 +706,11 @@ It assumes that   b   points to currently empty storage somewhere in  sbuf  */
 
  LOCAL int
 #ifdef KR_headers
-getcd(b, nocont)
+_getcd(b, nocont)
 	register char *b;
 	int nocont;
 #else
-getcd(register char *b, int nocont)
+_getcd(register char *b, int nocont)
 #endif
 {
 	register int c;
@@ -1045,6 +1045,20 @@ initline:
 			}
 	firstline = thislin;
 	return(STINITIAL);
+}
+
+LOCAL int getcd(char *b, int nocont)
+{
+    int code = _getcd(b, nocont);
+    fprintf(stderr, "getcd(, nocont=%d) = %d (%s)\n",
+            nocont, code,
+            code==STEOF?"EOF":
+            code==STINITIAL?"INITIAL":
+            code==STCONTINUE?"CONTINUE":
+            "?"
+            );
+    fprintf(stderr, "  b=%s\n", b);
+    return code;
 }
 
  LOCAL void

@@ -179,6 +179,7 @@ static char *lastfile = "??", *lastfile0 = "?";
 static char fbuf[P1_FILENAME_MAX];
 static long lastline;
 static void putlineno(Void);
+static void putsource(Void);
 
 
 /* Comment buffering data
@@ -501,6 +502,7 @@ doinclude(char *name)
 		infile = inclp->inclfp = fp;
 		lastline = 0;
 		putlineno();
+                putsource();
 		lastline = 0;
 	}
 	else
@@ -543,6 +545,7 @@ popinclude(Void)
 	{
 		lastline = 0;
 		putlineno();
+                putsource();
 		lastline = lineno;
 		endcd = nextcd = sbuf;
 		k = inclp->incllen;
@@ -576,7 +579,6 @@ p1_line_number(long line_number)
 putlineno(Void)
 {
 	extern int gflag;
-	register char *s0, *s1;
 
 	if (gflag) {
 		if (lastline)
@@ -590,6 +592,12 @@ putlineno(Void)
 			else
 				fbuf[0] = 0;
 		}
+}
+
+static void
+    putsource(Void)
+{
+	register char *s0, *s1;
 	if (addftnsrc) {
 		if (laststb && *laststb) {
 			for(s1 = laststb; *s1; s1++) {
@@ -604,7 +612,7 @@ putlineno(Void)
 			}
 		laststb = stb0;
 		}
-	}
+}
 
  int
 yylex(Void)
@@ -700,6 +708,7 @@ top:
 	if(nextcd == NULL)
 	{
 		code = getcd( nextcd = sbuf, 1 );
+                putsource();
 		stno = nxtstno;
 		prevlin = thislin;
                 dump("first", sbuf, endcd-sbuf);
@@ -712,6 +721,7 @@ top:
 
 	if(code == STCONTINUE)
 	{
+            fprintf(stderr, "** STCONTINUE\n");
 		lineno = thislin;
 		nextcd = NULL;
 		goto top;
@@ -742,6 +752,7 @@ top:
 			contmax();
 		linestart[ncont++] = nextcd;
 		code = getcd(nextcd,0);
+                putsource();
                 dump("other", sbuf, endcd-sbuf);
 		if (code != STCONTINUE)
 			break;

@@ -69,6 +69,60 @@ LOCAL int expcom;
 LOCAL int expeql;
 LOCAL char *nextch;
 LOCAL char *lastch;
+/*
+ * Statement buffer for extracting statements from source files
+ *
+ * Traditional 80-column cards consist of 5 columns for line number,
+ * one character for continuation mark, 66 characters of text and
+ * 8 characters ignored.  To read a statement we thus need to:
+ * 1) read text of first card (and extract line number, if any);
+ * 2) while the next card (looking ahead) has a continuation mark,
+ *    paste its text onto the end.
+ *
+ * But (as ever) it's more complicated:
+ * - an ampersand in the first column may also indicate continuation;
+ * - optionally we allow longer ("free form") lines;
+ * - a tab may be used to skip the label columns, and a tab signifies
+ *   that we may have a longer line;
+ * - comment lines with 'C' or 'c' or '*' in the first column, and it
+ *   seems that we want to buffer these up, to be output as C comments
+ *   after the generated C code;
+ * - comment lines can appear within a continuation sequence;
+ * - a "!" also indicates a comment, and can appear in label columns
+ * - the line number may contain embedded spaces;
+ * - we want to track filenames and line numbers for error reports;
+ * - we may be dealing with nested include files, so handle stacking
+ *   file contexts and unstacking on EOF;
+ * - we may encounter and handle C preprocessor #line directives
+ *   (in some systems, a .F source file is preprocessed to get .f);
+ * - optionally we want to record the source lines to annotate the
+ *   generated C code.
+ *
+ * sbuf		big buffer in which we build the pasted statement
+ *		but also with space for #line and some extra.
+ *
+ * Pointing into sbuf, we have:
+ * send		end of space for statement (66 * (maxcont+2)) i.e.
+ *		initial card plus maximum allowed continuations
+ *		plus one look-ahead card.  Also start of space
+ *		for #line directive
+ * shend	end of space for #line directive.  Also start of
+ *		an additional 70 bytes.
+ * nextcd	? start of next card (look-ahead)
+ * endcd	? end of look-ahead card
+ * linestart[]	? start of each continuation card
+ *
+ * stbuf[3][]	circular buffer of three buffers for saving source
+ * stb0		start of current stbuf
+ * laststb	previous stbuf (if any)
+ *
+ * Within getcd:
+ * a[6]		space for label and continuation
+ * aend		end of label space
+ * atend	end of non-tab in label space
+ * stb		next free character in current stbuf
+ * stbend	last char in current stbuf
+ */
 LOCAL char *nextcd 	= NULL;
 LOCAL char *endcd;
 LOCAL long prevlin;

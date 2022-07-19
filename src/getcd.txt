@@ -1,0 +1,16 @@
+def getcd:
+    if '&':
+        ++amp, a="&", ++speclin, p=aend
+    if 'C','*','!','#':
+        if '#':
+            *endcd++ = read_until('\n')
+            if "#(line)? (\d+)( \".*\")?":
+                L, infname = groups()
+            else:
+                raise Bad
+        storage[:] = read_until('\n')
+        store_comment(storage) when needed
+        goto top
+    else:
+        ungetc()
+

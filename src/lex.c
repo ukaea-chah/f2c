@@ -92,6 +92,24 @@ static char anum_buf[Table_size];
 #define isalnum_(x) anum_buf[x]
 #define isalpha_(x) (anum_buf[x] == 1)
 
+/*
+ * Comment buffer
+ * Stores sequence of comments, each with a null terminator
+ *
+ * cbfirst	first in linked list of comment_buf
+ * cbcur	current comment_buf to which comments may be added
+ * cbinit	first char of first comment_buf (once allocated)
+ * cbnext	first unused char in cbcur->buf
+ * cblast	end of cbcur->buf
+ *
+ * For each comment_buf cb in list before cbcur, cb->last is the
+ * first unused char in cb->buf
+ *
+ * Initially, all pointers NULL (since static); cbnext==cblast
+ * forces creation of first comment_buf on demand.
+ *
+ * After comments are flushed, the linked list is reused.
+ */
 #define COMMENT_BUF_STORE 4088
 
 typedef struct comment_buf {

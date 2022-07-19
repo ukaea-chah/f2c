@@ -328,6 +328,36 @@ static int gettok Argdcl((void));
 static void store_comment Argdcl((char*));
 LOCAL char *stbuf[3];
 
+static void dump_hex(const void *data, unsigned len)
+{
+    const unsigned char *cdata = data;
+    unsigned done, i, line;
+    for (done = 0; done < len; done += line) {
+        line = len - done;
+        if (line > 16) line = 16;
+        fprintf(stderr, "%4x:", done);
+        for (i = 0; i < line; i++) {
+            fprintf(stderr, " %02x", cdata[done + i]);
+            if (i % 8 == 7) fprintf(stderr, " ");
+        }
+        for ( ; i < 16; i++) {
+            fprintf(stderr, "   ");
+            if (i % 8 == 7) fprintf(stderr, " ");
+        }
+        for (i = 0; i < line; i++) {
+            unsigned char c = cdata[done + i];
+            fprintf(stderr, "%c", (c >= 0x20 && c < 0x7f) ? c : '.');
+        }
+        fprintf(stderr, "\n");
+    }
+}
+static void dump(const char *desc, const void *data, unsigned len)
+{
+    fprintf(stderr, "%s:\n", desc);
+    dump_hex(data, len);
+}
+
+
  int
 #ifdef KR_headers
 inilex(name)
@@ -567,6 +597,7 @@ putlineno(Void)
 					if (*s1 == '*' && s1[1] == '/')
 						*s1 = '+';
 				*s1 = 0;
+                                dump("P1_FORTRAN", s0, s1-s0);
 				p1puts(P1_FORTRAN, s0);
 				}
 			*laststb = 0;	/* prevent trouble after EOF */
@@ -663,6 +694,7 @@ getcds(Void)
 {
 	register char *p, *q;
 
+        fprintf(stderr, "==getcds==\n");
 	flush_comments ();
 top:
 	if(nextcd == NULL)
@@ -670,6 +702,7 @@ top:
 		code = getcd( nextcd = sbuf, 1 );
 		stno = nxtstno;
 		prevlin = thislin;
+                dump("first", sbuf, endcd-sbuf);
 	}
 	if(code == STEOF)
 		if( popinclude() )
@@ -708,7 +741,9 @@ top:
 		if (ncont >= maxcont || nextcd+66 > send)
 			contmax();
 		linestart[ncont++] = nextcd;
-		if ((code = getcd(nextcd,0)) != STCONTINUE)
+		code = getcd(nextcd,0);
+                dump("other", sbuf, endcd-sbuf);
+		if (code != STCONTINUE)
 			break;
 		if (ncont == 20 && noextflag) {
 			lineno = thislin;
@@ -1092,6 +1127,7 @@ initline:
 			*stb++ = *p++;
 		*stb++ = '\n';
 		*stb = 0;
+                dump("stb0", stb0, stb-stb0);
 		}
 
 /* Set   nxtstno   equal to the integer value of the statement label */
@@ -1274,6 +1310,7 @@ copychar:		/*not a string or space -- copy, shifting case if necessary */
 			else	*j++ = *i;
 		}
 	}
+        dump("--crunch", sbuf, j-sbuf);
 	lastch = j - 1;
 	nextch = sbuf;
 }

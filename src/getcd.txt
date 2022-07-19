@@ -10,7 +10,65 @@ def getcd:
                 raise Bad
         storage[:] = read_until('\n')
         store_comment(storage) when needed
-        goto top
+    ungetc()
+    a[:] = read_until('\n','\t',max=5)
+    if '\t':
+        atend = pos()
+        spacefill(a[:atend:])
+        speclin = 1
+    elif '\n':
+        spacefill(a[pos():])
+        endcd0 = endcd
+        if not speclin:
+            spacefill(sbuf[endcd:bend])
     else:
-        ungetc()
-
+        if warn72 & 2:
+            speclin = 1, bend=send
+        read_until('\n', max=bend-endcd)
+        if not '\n':
+            buf72 = read_until('\n', save=23, ignore='\r')
+            if warn72 and buf72 and not speclin:
+                maybe buf72[20:] = '...'
+                raise Bad('text after column 72')
+            endcd0 = endcd
+            if not speclin:
+                spacefill(sbuf[endcd:bend])
+    thislin += 1
+    if a[5] not in (' ','0'):
+        # Continuation
+        if not amp and '!' in a[:-1]:
+            goto initcheck
+        if addftnsrc and stb:
+            if stb.avail() > 7:
+                stb.append('$')
+                if amp:
+                    stb.append('&')
+                else:
+                    stb += a
+            if b[:endcd0] > stb.avail():
+                reduce encdc0 to fit
+            stb += b[:endcd0] + '\n'
+        if nocont:
+            raise Bad('illegal continuation')
+        elif not amp and a != '     ':
+            raise Bad('labeled continuation')
+        return STCONTINUE
+    =initcheck
+    for s in a[:atend], b[:endcd]:
+        if s.lstrip().startswith('!'):
+            bang()
+            goto top
+        elif s.lstrip():
+            goto initline
+    goto top
+    =initline
+    lastline |= thislin
+    if addftnsrc:
+        stb0 = stb = stbuf.next()
+        stb.add('$')
+        stb.add(a[:atend])
+        if atend < aend:
+            stb.add('\t')
+        stb.add(b[:endcd0] + '\n')
+    nextstno = int(a[:5).replace(' ',''))
+    

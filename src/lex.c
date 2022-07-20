@@ -1278,6 +1278,13 @@ copychar:		/*not a string or space -- copy, shifting case if necessary */
 	nextch = sbuf;
 }
 
+/*
+ * Analyse a crunched statement and find the first token.
+ * Since variable names may start with (or be equal to) keywords,
+ * some lexical analysis can help disambiguate statements.
+ * Also, it is quicker to distinguish some statement variations
+ * here than in the parser.
+ */
  LOCAL void
 analyz(Void)
 {
@@ -1290,6 +1297,19 @@ analyz(Void)
 		lastch = sbuf - 1; /* prevent double error msg */
 		return;
 	}
+	/*
+	 * There are several variants of IF statements, but we may
+	 * also have an array named "IF"; an '=' sign identifies
+	 * the latter.
+	 *  arithmetic IF
+	 *   IF(CMP) 100,200,300
+	 *  block IF
+	 *   IF(CH.EQ.')') THEN
+	 *  logical IF
+	 *   IF (A.GT.B) RETURN
+	 *  assignment
+	 *   IF(1)=99
+	 */
 	if(nextch+2<=lastch && nextch[0]=='i' && nextch[1]=='f' && nextch[2]=='(')
 	{
 		/* assignment or if statement -- look at character after balancing paren */
@@ -1317,6 +1337,22 @@ analyz(Void)
 		if(stkey != SLET)
 			nextch += 2;
 	}
+	/* The presence of an unparenthesised '=' identifies an
+	 * assignment, except for some DO statements - but they also
+	 * have a ',':
+	 *  labeled DO loop
+	 *   DO 100 I=1,10
+	 *  DO loop range
+	 *   DO I=0,N
+	 *  assignment
+	 *   DO 100 I=1.10
+	 *   DOUBLE PRECISION A=N
+	 *   DO 100 WHILE(MORE) = 0
+	 *   GOTO 100=7
+	 *   CALL F(1,5) = G
+	 *   WRITE(6,100) = 'X'
+	 *   EQUIVALENCE(I,J)=K
+	 */
 	else if(expeql) /* may be an assignment */
 	{
 		if(expcom && nextch<lastch &&
@@ -1327,6 +1363,14 @@ analyz(Void)
 		}
 		else	stkey = SLET;
 	}
+	/*
+	 * Identify other DO variants
+	 *  DO WHILE loop
+	 *   DO WHILE (FLAG)
+	 *   DO 100 WHILE (MORE)
+	 *  but not this declaration
+	 *   DOUBLE PRECISION B(N)
+	 */
 	else if (parseen && nextch + 7 < lastch
 			&& nextch[2] != 'u' /* screen out "double..." early */
 			&& nextch[0] == 'd' && nextch[1] == 'o'
@@ -1339,6 +1383,18 @@ analyz(Void)
 		needwkey = 1;
 		}
 	/* otherwise search for keyword */
+	/*
+	 * Look for the keyword starting the statement.
+	 * IF and DO are already handled above, so are excluded
+	 * from the keys[] table.
+	 * It is also easy to distinguish GO TO variants here:
+	 *  computed GOTO
+	 *   GO TO (100,200,300) I
+	 *  assigned GO TO
+	 *   GO TO I
+	 *  unconditional GO TO
+	 *   GO TO 900
+	 */
 	else	{
 		stkey = getkwd();
 		if(stkey==SGOTO && lastch>=nextch)

@@ -192,17 +192,35 @@ static void putlineno(Void);
    remain unused.
 */
 
+/*
+ * Include files
+ *
+ * Include files may be nested to depth MAXINCLUDES.
+ * The context that needs to be saved is:
+ * - file handle
+ * - source file name (actual or resulting from #line directives)
+ * - source line number (ditto)
+ * - line look-ahead information:
+ *   - type (EOF or INITIAL)
+ *   - text (columns 7..72, or free-form)
+ *   - label number
+ *   - pending comment lines (currently wrong: flushed not saved)
+ *
+ * The current context is in inclp, with borrowed references:
+ * - inffile		file handle
+ * - infname		filename
+ */
 /* struct Inclfile   holds the state information for each include file */
 struct Inclfile
 {
-	struct Inclfile *inclnext;
-	FILEP inclfp;
-	char *inclname;
-	int incllno;
-	char *incllinp;
-	int incllen;
-	int inclcode;
-	ftnint inclstno;
+	struct Inclfile *inclnext;	/* outer include */
+	FILEP inclfp;			/* file pointer */
+	char *inclname;			/* filename */
+	int incllno;			/* line number */
+	char *incllinp;			/* look-ahead source line */
+	int incllen;			/* length of source line */
+	int inclcode;			/* code: STEOF or STINITIAL */
+	ftnint inclstno;		/* statement label */
 };
 
 LOCAL struct Inclfile *inclp	=  NULL;
@@ -388,6 +406,7 @@ doinclude(char *name)
 	extern chainp Iargs;
 
 	err_lineno = -1;
+        /* Save context, unless at outer level */
 	if(inclp)
 	{
 		inclp->incllno = thislin;
@@ -412,6 +431,7 @@ doinclude(char *name)
 		)
 		fp = fopen(name, textread);
 	else {
+		/* Treat relative filename */
 		lastslash = NULL;
 		s = s0 = inclp->inclname;
 #ifdef MSDOS

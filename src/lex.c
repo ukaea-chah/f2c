@@ -702,6 +702,8 @@ top:
 		code = getcd( nextcd = sbuf, 1 );
 		stno = nxtstno;
 		prevlin = thislin;
+		fprintf(stderr, " prevlin=%d thislin=%d lineno=%d firstline=%d lastline=%d\n",
+			prevlin, thislin, lineno, firstline, lastline);
                 dump("first", sbuf, endcd-sbuf);
 	}
 	if(code == STEOF)
@@ -742,6 +744,8 @@ top:
 			contmax();
 		linestart[ncont++] = nextcd;
 		code = getcd(nextcd,0);
+		fprintf(stderr, " prevlin=%d thislin=%d lineno=%d firstline=%d lastline=%d\n",
+			prevlin, thislin, lineno, firstline, lastline);
                 dump("other", sbuf, endcd-sbuf);
 		if (code != STCONTINUE)
 			break;

@@ -81,7 +81,7 @@ extern "C" {
 #endif
 
 Cextern int unlink Argdcl((const char *));
-Cextern int fork Argdcl((void)), getpid Argdcl((void)), wait Argdcl((int*));
+/*Cextern int fork Argdcl((void)), getpid Argdcl((void)), wait Argdcl((int*));*/
 
  void
 #ifdef KR_headers

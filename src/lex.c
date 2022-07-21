@@ -583,6 +583,11 @@ putlineno(Void)
 	if (addftnsrc) {
 		if (laststb && *laststb) {
 			for(s1 = laststb; *s1; s1++) {
+				/*
+				 * The fortran source line will appear in a
+				 * C comment, so replace anything that looks
+				 * like a C end-comment with "+/"
+				 */
 				for(s0 = s1; *s1 != '\n'; s1++)
 					if (*s1 == '*' && s1[1] == '/')
 						*s1 = '+';
@@ -824,10 +829,10 @@ getcd(register char *b, int nocont)
 	long L;
 
 top:
-	endcd = b;
-	bend = b+66;
-	amp = speclin = NO;
-	atend = aend;
+	endcd = b;			/* no chars in card yet */
+	bend = b+66;			/* limit of standard card */
+	amp = speclin = NO;		/* assume standard card */
+	atend = aend;			/* assume no tab in label */
 
 /* Handle the continuation shorthand of "&" in the first column, which stands
    for "     x" */
@@ -838,8 +843,8 @@ top:
 		a[1] = 0;
 		a[5] = 'x';
 		amp = speclin = YES;
-		bend = send;
-		p = aend;
+		bend = send;		/* free-format, so use all space */
+		p = aend;		/* no more label chars */
 	}
 
 /* Handle the Comment cards (a 'C', 'c', '*', or '!' in the first column). */
@@ -854,6 +859,8 @@ top:
 		    return STEOF;
 
 		if (c == '#') {
+			/* Handle "#line", ignore other # directives */
+			/* Read reast of line into buffer */
 			*endcd++ = c;
 			while((c = getc(infile)) != '\n')
 				if (c == EOF)
@@ -861,19 +868,22 @@ top:
 				else if (endcd < shend)
 					*endcd++ = c;
 			++thislin;
-			*endcd = 0;
+			*endcd = 0;	/* zap the '\n' */
 			if (b[1] == ' ')
+				/* allow "# 1234"... */
 				p = b + 2;
 			else if (!strncmp(b,"#line ",6))
+				/* or "#line 1234"... */
 				p = b + 6;
 			else {
  bad_cpp:
 				lineno = thislin;
 				errstr("Bad # line: \"%s\"", b);
-				goto top;
+				goto top; /* ignore and try next line */
 				}
 			if (*p < '1' || *p > '9')
 				goto bad_cpp;
+			/* Extract line number and any following space */
 			L = *p - '0';
 			while((c = *++p) >= '0' && c <= '9')
 				L = 10*L + c - '0';
@@ -884,6 +894,7 @@ top:
 				thislin = L - 1;
 				goto top;
 				}
+			/* optional filename */
 			if (c != '"')
 				goto bad_cpp;
 			bend = p;
@@ -891,12 +902,14 @@ top:
 				if (!*p)
 					goto bad_cpp;
 			*p = 0;
-			i = p - bend++;
+			i = p - bend++;	/* bend is now filename */
 			thislin = L - 1;
 			if (!infname1 || strcmp(infname1, bend)) {
+				/* new reporting filename */
 				if (infname1)
 					free(infname1);
 				if (infname && !strcmp(infname, bend)) {
+					/* reverting to real filename */
 					infname1 = 0;
 					goto top;
 					}
@@ -904,6 +917,7 @@ top:
 				infname1 = Alloc(i);
 				strcpy(infname1, bend);
 				if (!infname) {
+					/* now have a name for stdin */
 					infname = infname1;
 					infname1 = 0;
 					}
@@ -911,6 +925,7 @@ top:
 			goto top;
 			}
 
+		/* Store comment line, maybe in chunks */
 		storage[COMMENT_BUFFER_SIZE] = c = '\0';
 		pointer = storage;
 		while( !feof (infile) && (*pointer++ = c = getc(infile)) != '\n') {
@@ -1075,6 +1090,10 @@ top:
 		return(STCONTINUE);
 		}
 initcheck:
+	/*
+	 * see if the first non-space (in label or main field) is '!' -
+	 * if so, treat as a comment line
+	 */
 	for(p=a; p<atend; ++p)
 		if( !isspace(*p) ) {
 			if (*p++ != '!')

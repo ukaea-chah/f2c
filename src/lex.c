@@ -744,6 +744,12 @@ top:
 			contmax();
 		linestart[ncont++] = nextcd;
 		code = getcd(nextcd,0);
+		/*
+		 * lineno is still set to last line processed
+		 * prevlin is the first line of the statement
+		 * thislin is the line just read (maybe from next statement)
+		 * firstline = thislin
+		 */
 		fprintf(stderr, " prevlin=%d thislin=%d lineno=%d firstline=%d lastline=%d\n",
 			prevlin, thislin, lineno, firstline, lastline);
                 dump("other", sbuf, endcd-sbuf);

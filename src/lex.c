@@ -164,14 +164,18 @@ static char anum_buf[Table_size];
  *
  * After comments are flushed, the linked list is reused.
  */
-#define COMMENT_BUF_STORE 4088
-
-typedef struct comment_buf {
-	struct comment_buf *next;
+#define SLIST_BUF_SIZE 4088
+typedef struct Schunk {
+	struct Schunk *next;
 	char *last;
-	char buf[COMMENT_BUF_STORE];
-	} comment_buf;
-static comment_buf *cbfirst, *cbcur;
+	char buf[SLIST_BUF_SIZE];
+} Schunk;
+typedef struct {
+	Schunk *head;			/* First chunk */
+	Schunk *tail;			/* Last chunk used */
+} Slist;
+
+static Slist com;
 static char *cbinit, *cbnext, *cblast;
 static void flush_comments Argdcl((void));
 extern flag use_bs;
@@ -1831,7 +1835,7 @@ store_comment(char *str)
 #endif
 {
 	int len;
-	comment_buf *ncb;
+	Schunk *ncb;
 
 	if (nextcd == sbuf) {
 		flush_comments();
@@ -1841,23 +1845,23 @@ store_comment(char *str)
 	len = strlen(str) + 1;
 	if (cbnext + len > cblast) {
 		ncb = 0;
-		if (cbcur) {
-			cbcur->last = cbnext;
-			ncb = cbcur->next;
+		if (com.tail) {
+			com.tail->last = cbnext;
+			ncb = com.tail->next;
 			}
 		if (!ncb) {
-			ncb = (comment_buf *) Alloc(sizeof(comment_buf));
-			if (cbcur)
-				cbcur->next = ncb;
+			ncb = (Schunk *) Alloc(sizeof(Schunk));
+			if (com.tail)
+				com.tail->next = ncb;
 			else {
-				cbfirst = ncb;
+				com.head = ncb;
 				cbinit = ncb->buf;
 				}
 			ncb->next = 0;
 			}
-		cbcur = ncb;
+		com.tail = ncb;
 		cbnext = ncb->buf;
-		cblast = cbnext + COMMENT_BUF_STORE;
+		cblast = cbnext + SLIST_BUF_SIZE;
 		}
 	strcpy(cbnext, str);
 	cbnext += len;
@@ -1867,23 +1871,23 @@ store_comment(char *str)
 flush_comments(Void)
 {
 	register char *s, *s1;
-	register comment_buf *cb;
+	register Schunk *cb;
 	if (cbnext == cbinit)
 		return;
-	cbcur->last = cbnext;
-	for(cb = cbfirst;; cb = cb->next) {
+	com.tail->last = cbnext;
+	for(cb = com.head;; cb = cb->next) {
 		for(s = cb->buf; s < cb->last; s = s1) {
 			/* compute s1 = new s value first, since */
 			/* p1_comment may insert nulls into s */
 			s1 = s + strlen(s) + 1;
 			p1_comment(s);
 			}
-		if (cb == cbcur)
+		if (cb == com.tail)
 			break;
 		}
-	cbcur = cbfirst;
+	com.tail = com.head;
 	cbnext = cbinit;
-	cblast = cbnext + COMMENT_BUF_STORE;
+	cblast = cbnext + SLIST_BUF_SIZE;
 	}
 
  void

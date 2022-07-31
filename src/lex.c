@@ -179,6 +179,7 @@ typedef struct {
 static Schunk *schunk_pool;
 static Slist com;
 static Schunk *schunk_new Argdcl((void));
+static void slist_add Argdcl((Slist *, char *, int));
 static void flush_comments Argdcl((void));
 extern flag use_bs;
 static char *lastfile = "??", *lastfile0 = "?";
@@ -1836,7 +1837,6 @@ store_comment(str)
 store_comment(char *str)
 #endif
 {
-	int len;
 	Schunk *ncb;
 
 	if (nextcd == sbuf) {
@@ -1844,28 +1844,7 @@ store_comment(char *str)
 		p1_comment(str);
 		return;
 		}
-	len = strlen(str) + 1;
-	if (com.pos + len > com.end) {
-		ncb = 0;
-		if (com.tail) {
-			com.tail->last = com.pos;
-			ncb = com.tail->next;
-			}
-		if (!ncb) {
-			ncb = schunk_new();
-			if (com.tail)
-				com.tail->next = ncb;
-			else {
-				com.head = ncb;
-				}
-			ncb->next = 0;
-			}
-		com.tail = ncb;
-		com.pos = ncb->buf;
-		com.end = com.pos + SLIST_BUF_SIZE;
-		}
-	strcpy(com.pos, str);
-	com.pos += len;
+	slist_add(&com, str, strlen(str));
 	}
 
  static void
@@ -1933,4 +1912,26 @@ schunk_new(Void)
 	else
 		sc = (Schunk *) Alloc(sizeof(Schunk));
 	return sc;
+}
+
+void
+slist_add(Slist *sl, char *s, int len)
+{
+	if (len + 1 > SLIST_BUF_SIZE) Fatal("string too large for slist");
+	if (len + 1 > sl->end - sl->pos) {
+		Schunk *sc = schunk_new();
+		sc->next = 0;
+		if (sl->tail) {
+			sl->tail->last = sl->pos;
+			sl->tail->next = sc;
+			}
+		else
+			sl->head = sc;
+		sl->tail = sc;
+		sl->pos = sc->buf;
+		sl->end = sc->buf + SLIST_BUF_SIZE;
+	}
+	memcpy(sl->pos, s, len);
+	sl->pos[len] = 0;
+	sl->pos += len + 1;
 }

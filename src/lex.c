@@ -153,13 +153,13 @@ static char anum_buf[Table_size];
  * cbfirst	first in linked list of comment_buf
  * cbcur	current comment_buf to which comments may be added
  * cbinit	first char of first comment_buf (once allocated)
- * cbnext	first unused char in cbcur->buf
- * cblast	end of cbcur->buf
+ * com.pos	first unused char in cbcur->buf
+ * com.end	end of cbcur->buf
  *
  * For each comment_buf cb in list before cbcur, cb->last is the
  * first unused char in cb->buf
  *
- * Initially, all pointers NULL (since static); cbnext==cblast
+ * Initially, all pointers NULL (since static); com.pos==com.end
  * forces creation of first comment_buf on demand.
  *
  * After comments are flushed, the linked list is reused.
@@ -173,12 +173,14 @@ typedef struct Schunk {
 typedef struct {
 	Schunk *head;			/* First chunk */
 	Schunk *tail;			/* Last chunk used */
+	char *pos;			/* Free space in tail->buf or NULL */
+	char *end;			/* End of tail->buf or NULL */
 } Slist;
 
 static Schunk *schunk_pool;
 static Slist com;
 static Schunk *schunk_new Argdcl((void));
-static char *cbinit, *cbnext, *cblast;
+static char *cbinit;
 static void flush_comments Argdcl((void));
 extern flag use_bs;
 static char *lastfile = "??", *lastfile0 = "?";
@@ -1845,10 +1847,10 @@ store_comment(char *str)
 		return;
 		}
 	len = strlen(str) + 1;
-	if (cbnext + len > cblast) {
+	if (com.pos + len > com.end) {
 		ncb = 0;
 		if (com.tail) {
-			com.tail->last = cbnext;
+			com.tail->last = com.pos;
 			ncb = com.tail->next;
 			}
 		if (!ncb) {
@@ -1862,11 +1864,11 @@ store_comment(char *str)
 			ncb->next = 0;
 			}
 		com.tail = ncb;
-		cbnext = ncb->buf;
-		cblast = cbnext + SLIST_BUF_SIZE;
+		com.pos = ncb->buf;
+		com.end = com.pos + SLIST_BUF_SIZE;
 		}
-	strcpy(cbnext, str);
-	cbnext += len;
+	strcpy(com.pos, str);
+	com.pos += len;
 	}
 
  static void
@@ -1874,9 +1876,9 @@ flush_comments(Void)
 {
 	register char *s, *s1;
 	register Schunk *cb;
-	if (cbnext == cbinit)
+	if (com.pos == cbinit)
 		return;
-	com.tail->last = cbnext;
+	com.tail->last = com.pos;
 	for(cb = com.head;; cb = cb->next) {
 		for(s = cb->buf; s < cb->last; s = s1) {
 			/* compute s1 = new s value first, since */
@@ -1888,8 +1890,8 @@ flush_comments(Void)
 			break;
 		}
 	com.tail = com.head;
-	cbnext = cbinit;
-	cblast = cbnext + SLIST_BUF_SIZE;
+	com.pos = cbinit;
+	com.end = com.pos + SLIST_BUF_SIZE;
 	}
 
  void

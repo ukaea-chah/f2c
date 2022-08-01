@@ -150,17 +150,16 @@ static char anum_buf[Table_size];
  * Comment buffer
  * Stores sequence of comments, each with a null terminator
  *
- * cbfirst	first in linked list of comment_buf
- * cbcur	current comment_buf to which comments may be added
- * cbinit	first char of first comment_buf (once allocated)
+ * com.head	first in linked list of comment_buf
+ * com.tail	current Schunk to which comments may be added
  * com.pos	first unused char in cbcur->buf
  * com.end	end of cbcur->buf
  *
- * For each comment_buf cb in list before cbcur, cb->last is the
+ * For each Schunk cb in list before cbcur, cb->last is the
  * first unused char in cb->buf
  *
  * Initially, all pointers NULL (since static); com.pos==com.end
- * forces creation of first comment_buf on demand.
+ * forces creation of first Schunk on demand.
  *
  * After comments are flushed, the linked list is reused.
  */
@@ -180,7 +179,6 @@ typedef struct {
 static Schunk *schunk_pool;
 static Slist com;
 static Schunk *schunk_new Argdcl((void));
-static char *cbinit;
 static void flush_comments Argdcl((void));
 extern flag use_bs;
 static char *lastfile = "??", *lastfile0 = "?";
@@ -1859,7 +1857,6 @@ store_comment(char *str)
 				com.tail->next = ncb;
 			else {
 				com.head = ncb;
-				cbinit = ncb->buf;
 				}
 			ncb->next = 0;
 			}
@@ -1876,7 +1873,7 @@ flush_comments(Void)
 {
 	register char *s, *s1;
 	register Schunk *cb;
-	if (com.pos == cbinit)
+	if (com.head == NULL)
 		return;
 	com.tail->last = com.pos;
 	for(cb = com.head;; cb = cb->next) {
@@ -1889,9 +1886,11 @@ flush_comments(Void)
 		if (cb == com.tail)
 			break;
 		}
-	com.tail = com.head;
-	com.pos = cbinit;
-	com.end = com.pos + SLIST_BUF_SIZE;
+	/* Free and clear the list */
+	com.tail->next = schunk_pool;
+	schunk_pool = com.head;
+	com.tail = com.head = NULL;
+	com.end = com.pos = NULL;
 	}
 
  void

@@ -175,7 +175,9 @@ typedef struct {
 	Schunk *tail;			/* Last chunk used */
 } Slist;
 
+static Schunk *schunk_pool;
 static Slist com;
+static Schunk *schunk_new Argdcl((void));
 static char *cbinit, *cbnext, *cblast;
 static void flush_comments Argdcl((void));
 extern flag use_bs;
@@ -1850,7 +1852,7 @@ store_comment(char *str)
 			ncb = com.tail->next;
 			}
 		if (!ncb) {
-			ncb = (Schunk *) Alloc(sizeof(Schunk));
+			ncb = schunk_new();
 			if (com.tail)
 				com.tail->next = ncb;
 			else {
@@ -1918,3 +1920,16 @@ endcheck(Void)
 		warn("ignoring text after \"end\".");
 	lexstate = RETEOS;
 	}
+
+Schunk *
+schunk_new(Void)
+{
+	Schunk *sc;
+	if (schunk_pool) {
+		sc = schunk_pool;
+		schunk_pool = sc->next;
+		}
+	else
+		sc = (Schunk *) Alloc(sizeof(Schunk));
+	return sc;
+}

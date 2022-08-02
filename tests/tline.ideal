@@ -1,0 +1,11 @@
+== stderr ==
+tline.f:
+   tline:
+Error on line 2 of tline.f: unclassifiable statement (starts "preerror")
+Error on line 1 of tline1.f: unclassifiable statement (starts "incerror")
+Error on line 5 of tline1.f: unclassifiable statement (starts "sameincerr")
+Error on line 1 of tline2.f: unclassifiable statement (starts "alterror")
+Error on line 2 of tline2.f: unclassifiable statement (starts "conterror")
+Error on line 4 of tline.f: unclassifiable statement (starts "posterror")
+Error on line 1 of tlinec.f: unclassifiable statement (starts "cpperror")
+Error on line 8 of tlinec.f: unclassifiable statement (starts "cpperror2")

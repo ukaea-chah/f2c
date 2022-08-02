@@ -1,0 +1,11 @@
+#!/bin/sh
+stub=$1
+test -f "$stub.exp" || touch "$stub.exp"
+if diff -u "$stub.exp" "$stub.out" > "$stub.dif"; then
+    rm "$stub.dif"
+    touch "$stub.ok"
+else
+    rm -f "$stub.ok"
+    echo "$stub.dif:1: Differences detected" >&2
+    exit 1
+fi

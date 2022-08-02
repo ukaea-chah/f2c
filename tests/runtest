@@ -1,0 +1,15 @@
+#!/bin/sh
+
+F2C=${F2C-f2c}
+
+test $# -eq 1 || { echo "Usage: $0 test">&2; exit 2; }
+TEST=$1
+OUT=$TEST.out
+
+rm -f "$TEST.c"
+echo "== stderr ==" > "$OUT"
+"$F2C" "$TEST.f" 2>> "$OUT"
+if [ -f "$TEST.c" ]; then
+   echo "== C ==" >> "$OUT"
+   sed -e 's/\(translated by f2c (version \)[0-9]*/\1@VSN/' "$TEST.c" >> "$OUT"
+fi

@@ -179,7 +179,9 @@ typedef struct {
 static Schunk *schunk_pool;
 static Slist com;
 static Schunk *schunk_new Argdcl((void));
+#define slist_init(sl) do { (sl)->tail = (sl)->head = 0; (sl)->end = (sl)->pos = 0; } while (0)
 static void slist_add Argdcl((Slist *, char *, int));
+static void slist_free Argdcl((Slist *));
 static void flush_comments Argdcl((void));
 extern flag use_bs;
 static char *lastfile = "??", *lastfile0 = "?";
@@ -1866,10 +1868,7 @@ flush_comments(Void)
 			break;
 		}
 	/* Free and clear the list */
-	com.tail->next = schunk_pool;
-	schunk_pool = com.head;
-	com.tail = com.head = NULL;
-	com.end = com.pos = NULL;
+	slist_free(&com);
 	}
 
  void
@@ -1934,4 +1933,14 @@ slist_add(Slist *sl, char *s, int len)
 	memcpy(sl->pos, s, len);
 	sl->pos[len] = 0;
 	sl->pos += len + 1;
+}
+
+void
+slist_free(Slist *sl)
+{
+	if (sl->head) {
+		sl->tail->next = schunk_pool;
+		schunk_pool = sl->head;
+		}
+	slist_init(sl);
 }

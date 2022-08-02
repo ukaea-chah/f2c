@@ -180,7 +180,8 @@ static Schunk *schunk_pool;
 static Slist com;
 static Schunk *schunk_new Argdcl((void));
 #define slist_init(sl) do { (sl)->tail = (sl)->head = 0; (sl)->end = (sl)->pos = 0; } while (0)
-static void slist_add Argdcl((Slist *, char *, int));
+static void slist_add2 Argdcl((Slist *, char *, int, char *, int));
+#define slist_add(sl,s,l) slist_add2(sl,s,l,0,0)
 static void slist_free Argdcl((Slist *));
 static void flush_comments Argdcl((void));
 extern flag use_bs;
@@ -1926,10 +1927,10 @@ schunk_new(Void)
 }
 
 void
-slist_add(Slist *sl, char *s, int len)
+slist_add2(Slist *sl, char *s1, int len1, char *s2, int len2)
 {
-	if (len + 1 > SLIST_BUF_SIZE) Fatal("string too large for slist");
-	if (len + 1 > sl->end - sl->pos) {
+	if (len1 + len2 + 1 > SLIST_BUF_SIZE) Fatal("string too large for slist");
+	if (len1 + len2 + 1 > sl->end - sl->pos) {
 		Schunk *sc = schunk_new();
 		sc->next = 0;
 		if (sl->tail) {
@@ -1942,9 +1943,11 @@ slist_add(Slist *sl, char *s, int len)
 		sl->pos = sc->buf;
 		sl->end = sc->buf + SLIST_BUF_SIZE;
 	}
-	memcpy(sl->pos, s, len);
-	sl->pos[len] = 0;
-	sl->pos += len + 1;
+	memcpy(sl->pos, s1, len1);
+	if (s2)
+		memcpy(sl->pos + len1, s2, len2);
+	sl->pos[len1 + len2] = 0;
+	sl->pos += len1 + len2 + 1;
 }
 
 void

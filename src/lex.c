@@ -230,6 +230,7 @@ struct Inclfile
 	int incllen;			/* length of source line */
 	int inclcode;			/* code: STEOF or STINITIAL */
 	ftnint inclstno;		/* statement label */
+	Slist inclcom;			/* comments */
 };
 
 LOCAL struct Inclfile *inclp	=  NULL;
@@ -425,6 +426,8 @@ doinclude(char *name)
 			inclp->incllinp = copyn(inclp->incllen = j, nextcd);
 		else
 			inclp->incllinp = 0;
+		inclp->inclcom = com;
+		slist_init(&com);
 	}
 	nextcd = NULL;
 
@@ -538,6 +541,10 @@ popinclude(Void)
 	lineno = prevlin = thislin = inclp->incllno;
 	code = inclp->inclcode;
 	stno = nxtstno = inclp->inclstno;
+	/* Restore comments preceding pending line */
+	slist_free(&com);
+	com = inclp->inclcom;
+	slist_free(&inclp->inclcom);
 	if(inclp->incllinp)
 	{
 		lastline = 0;
@@ -706,8 +713,13 @@ top:
 		prevlin = thislin;
 	}
 	if(code == STEOF)
-		if( popinclude() )
+		if( popinclude() ) {
+			/* Output any comments seen while looking ahead
+			 * for end of include statement
+			 */
+			flush_comments();
 			goto top;
+			}
 		else
 			return(STEOF);
 

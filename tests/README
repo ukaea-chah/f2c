@@ -1,0 +1,2 @@
+The *.exp files are the expected output, to test for regressions.
+The *.ideal files are how we would like the output to appear.

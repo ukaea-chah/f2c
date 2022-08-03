@@ -1,5 +1,5 @@
 F2C = ../src/f2c
-TESTS = tline tcom
+TESTS = t1 t2 t3 t4 tline tcom
 
 allok:	$(TESTS:=.ok)
 

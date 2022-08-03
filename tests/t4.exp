@@ -27,10 +27,10 @@ Warning on line 42 of t4tail.F: attempted division by zero
 /*     into a variable */
     a = 1.f;
 /*     about to include t4inc1.f */
-/*     after first include? */
 /*     set i1 */
     i1 = 11;
 /*     i1 was set */
+/*     after first include? */
     b = 2.f;
     i2 = 22;
 /* end of second include */

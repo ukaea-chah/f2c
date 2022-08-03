@@ -20,12 +20,12 @@ tcom.f:
 {
     static real a, b;
 
-/*     after include */
-/*     but we don't yet know */
-/*     that there is no continuation */
 /*     before included statement */
     b = 2.f;
 /*     after included statement */
+/*     after include */
+/*     but we don't yet know */
+/*     that there is no continuation */
     a = 1.f;
     return 0;
 } /* tcom_ */

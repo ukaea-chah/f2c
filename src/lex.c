@@ -181,6 +181,7 @@ static void slist_add2 Argdcl((Slist *, char *, int, char *, int));
 #define slist_add(sl,s,l) slist_add2(sl,s,l,0,0)
 static void slist_free Argdcl((Slist *));
 static void flush_comments Argdcl((void));
+static void flush_source Argdcl((void));
 extern flag use_bs;
 static char *lastfile = "??", *lastfile0 = "?";
 static char fbuf[P1_FILENAME_MAX];
@@ -577,8 +578,6 @@ p1_line_number(long line_number)
 putlineno(Void)
 {
 	extern int gflag;
-	Schunk *sc;
-	register char *s0, *s1;
 
 	if (gflag) {
 		if (lastline)
@@ -591,25 +590,6 @@ putlineno(Void)
 				}
 			else
 				fbuf[0] = 0;
-		}
-	if (addftnsrc) {
-		if (src.tail)
-			src.tail->last = src.pos;
-		for (sc = src.head; sc; sc = sc->next) {
-			/* Output sequence of null-terminated source lines */
-			for (s0 = sc->buf; s0 < sc->last; s0 = s1 + 1) {
-				/*
-				 * The fortran source line will appear in a
-				 * C comment, so replace anything that looks
-				 * like a C end-comment with "+/"
-				 */
-				for(s1 = s0; *s1 != 0; s1++)
-					if (*s1 == '*' && s1[1] == '/')
-						*s1 = '+';
-				p1puts(P1_FORTRAN, s0);
-				}
-			}
-		slist_free(&src);
 		}
 	}
 
@@ -751,6 +731,7 @@ top:
 		if (ncont >= maxcont || nextcd+66 > send)
 			contmax();
 		linestart[ncont++] = nextcd;
+		flush_source();
 		if ((code = getcd(nextcd,0)) != STCONTINUE)
 			break;
 		if (ncont == 20 && noextflag) {
@@ -1865,6 +1846,31 @@ flush_comments(Void)
 	/* Free and clear the list */
 	slist_free(&com);
 	}
+
+void
+flush_source(Void)
+{
+	Schunk *sc;
+	register char *s0, *s1;
+
+	if (src.tail)
+		src.tail->last = src.pos;
+	for (sc = src.head; sc; sc = sc->next) {
+		/* Output sequence of null-terminated source lines */
+		for (s0 = sc->buf; s0 < sc->last; s0 = s1 + 1) {
+			/*
+			 * The fortran source line will appear in a
+			 * C comment, so replace anything that looks
+			 * like a C end-comment with "+/"
+			 */
+			for(s1 = s0; *s1 != 0; s1++)
+				if (*s1 == '*' && s1[1] == '/')
+					*s1 = '+';
+			p1puts(P1_FORTRAN, s0);
+		}
+	}
+	slist_free(&src);
+}
 
  void
 unclassifiable(Void)

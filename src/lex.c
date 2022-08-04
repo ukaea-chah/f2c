@@ -112,16 +112,13 @@ LOCAL char *lastch;
  * endcd	? end of look-ahead card
  * linestart[]	? start of each continuation card
  *
- * stbuf[3][]	circular buffer of three buffers for saving source
- * stb0		start of current stbuf
- * laststb	previous stbuf (if any)
+ * src		list of source lines for comments
  *
  * Within getcd:
  * a[6]		space for label and continuation
  * aend		end of label space
  * atend	end of non-tab in label space
  * stb		next free character in current stbuf
- * stbend	last char in current stbuf
  */
 LOCAL char *nextcd 	= NULL;
 LOCAL char *endcd;
@@ -355,7 +352,7 @@ static int getcds Argdcl((void));
 static int getkwd Argdcl((void));
 static int gettok Argdcl((void));
 static void store_comment Argdcl((char*));
-LOCAL char *stbuf[3];
+LOCAL Slist src;
 
  int
 #ifdef KR_headers
@@ -365,9 +362,6 @@ inilex(name)
 inilex(char *name)
 #endif
 {
-	stbuf[0] = Alloc(3*P1_STMTBUFSIZE);
-	stbuf[1] = stbuf[0] + P1_STMTBUFSIZE;
-	stbuf[2] = stbuf[1] + P1_STMTBUFSIZE;
 	nincl = 0;
 	inclp = NULL;
 	doinclude(name);
@@ -583,6 +577,7 @@ p1_line_number(long line_number)
 putlineno(Void)
 {
 	extern int gflag;
+	Schunk *sc;
 	register char *s0, *s1;
 
 	if (gflag) {
@@ -598,22 +593,23 @@ putlineno(Void)
 				fbuf[0] = 0;
 		}
 	if (addftnsrc) {
-		if (laststb && *laststb) {
-			for(s1 = laststb; *s1; s1++) {
+		if (src.tail)
+			src.tail->last = src.pos;
+		for (sc = src.head; sc; sc = sc->next) {
+			/* Output sequence of null-terminated source lines */
+			for (s0 = sc->buf; s0 < sc->last; s0 = s1 + 1) {
 				/*
 				 * The fortran source line will appear in a
 				 * C comment, so replace anything that looks
 				 * like a C end-comment with "+/"
 				 */
-				for(s0 = s1; *s1 != '\n'; s1++)
+				for(s1 = s0; *s1 != 0; s1++)
 					if (*s1 == '*' && s1[1] == '/')
 						*s1 = '+';
-				*s1 = 0;
 				p1puts(P1_FORTRAN, s0);
 				}
-			*laststb = 0;	/* prevent trouble after EOF */
 			}
-		laststb = stb0;
+		slist_free(&src);
 		}
 	}
 
@@ -839,8 +835,9 @@ getcd(register char *b, int nocont)
 				   "&" shorthand for continuation, use of a "\t"
 				   to skip part of the label columns) */
 	static char a[6];	/* Statement label buffer */
+	static char preamble[1+6];
 	static char *aend	= a+6;
-	static char *stb, *stbend;
+	static char *stb;
 	static int nst;
 	char *atend, *endcd0;
 	extern int warn72;
@@ -1081,25 +1078,16 @@ top:
 			for(p = a; p < aend;)
 				if (*p++ == '!' && p != aend)
 					goto initcheck;
-		if (addftnsrc && stb) {
-			if (stbend > stb + 7) { /* otherwise forget col 1-6 */
-				/* kludge around funny p1gets behavior */
-				*stb++ = '$';
-				if (amp)
-					*stb++ = '&';
-				else
-					for(p = a; p < atend;)
-						*stb++ = *p++;
-				}
-			if (endcd0 - b > stbend - stb) {
-				if (stb > stbend)
-					stb = stbend;
-				endcd0 = b + (stbend - stb);
-				}
-			for(p = b; p < endcd0;)
-				*stb++ = *p++;
-			*stb++ = '\n';
-			*stb = 0;
+		if (addftnsrc) {
+			stb = preamble;
+			/* kludge around funny p1gets behavior */
+			*stb++ = '$';
+			if (amp)
+				*stb++ = '&';
+			else
+				for(p = a; p < atend;)
+					*stb++ = *p++;
+			slist_add2(&src, preamble, stb-preamble, b, endcd0-b);
 			}
 		if (nocont) {
 			lineno = thislin;
@@ -1139,20 +1127,14 @@ initline:
 	if (!lastline)
 		lastline = thislin;
 	if (addftnsrc) {
-		nst = (nst+1)%3;
-		if (!laststb && stb0)
-			laststb = stb0;
-		stb0 = stb = stbuf[nst];
+		stb = preamble;
 		*stb++ = '$';	/* kludge around funny p1gets behavior */
-		stbend = stb + sizeof(stbuf[0])-2;
+		/* Reconstruct label field */
 		for(p = a; p < atend;)
 			*stb++ = *p++;
 		if (atend < aend)
 			*stb++ = '\t';
-		for(p = b; p < endcd0;)
-			*stb++ = *p++;
-		*stb++ = '\n';
-		*stb = 0;
+		slist_add2(&src, preamble, stb-preamble, b, endcd0-b);
 		}
 
 /* Set   nxtstno   equal to the integer value of the statement label */

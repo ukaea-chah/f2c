@@ -31,11 +31,11 @@ Warning on line 42 of t4tail.F: attempted division by zero
 /*     about to include t4inc1.f */
 /*<       include 't4inc1.f' >*/
 /*<       b = 2 >*/
-/*     after first include? */
 /*     set i1 */
     i1 = 11;
 /*     i1 was set */
 /*<       i1 = 11 >*/
+/*     after first include? */
     b = 2.f;
 /*<       include 't4inc2.f' >*/
 /*<       c = 3 >*/

@@ -27,9 +27,9 @@ t3.f:
 /* pling comment */
 /* no-op */
     s_copy(buf, "pre", (ftnlen)40, (ftnlen)3);
+    s_copy(buf, "included", (ftnlen)40, (ftnlen)8);
 /*     looking? */
 /* incl comment */
-    s_copy(buf, "included", (ftnlen)40, (ftnlen)8);
     s_copy(buf, "post", (ftnlen)40, (ftnlen)4);
 /*     is there a continuation? */
 /*     finally we know not */

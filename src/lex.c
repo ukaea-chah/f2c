@@ -540,7 +540,7 @@ popinclude(Void)
 	/* Restore comments preceding pending line */
 	slist_free(&com);
 	com = inclp->inclcom;
-	slist_free(&inclp->inclcom);
+	slist_init(&inclp->inclcom);
 	if(inclp->incllinp)
 	{
 		lastline = 0;

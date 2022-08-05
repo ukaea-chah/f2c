@@ -230,6 +230,7 @@ struct Inclfile
 	int inclcode;			/* code: STEOF or STINITIAL */
 	ftnint inclstno;		/* statement label */
 	Slist inclcom;			/* comments */
+	Slist inclsrc;			/* source lines */
 };
 
 LOCAL struct Inclfile *inclp	=  NULL;
@@ -424,6 +425,8 @@ doinclude(char *name)
 			inclp->incllinp = 0;
 		inclp->inclcom = com;
 		slist_init(&com);
+		inclp->inclsrc = src;
+		slist_init(&src);
 	}
 	nextcd = NULL;
 
@@ -541,6 +544,10 @@ popinclude(Void)
 	slist_free(&com);
 	com = inclp->inclcom;
 	slist_init(&inclp->inclcom);
+	/* Restore source line for comment */
+	slist_free(&src);
+	src = inclp->inclsrc;
+	slist_init(&inclp->inclsrc);
 	if(inclp->incllinp)
 	{
 		lastline = 0;

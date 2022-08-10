@@ -30,11 +30,12 @@ c_t3.f:
 /*<       continue                                    ! no-op >*/
 /*<       buf = 'pre' >*/
     s_copy(buf, "pre", (ftnlen)40, (ftnlen)3);
-/*<        >*/
-/*<       buf = 'post' >*/
-    s_copy(buf, "included", (ftnlen)40, (ftnlen)8);
+/*<       include 't3inc.f' >*/
+/*<      $                                            ! incl comment >*/
 /*<       buf = 'included' >*/
+    s_copy(buf, "included", (ftnlen)40, (ftnlen)8);
 /*     looking? */
+/*<       buf = 'post' >*/
     s_copy(buf, "post", (ftnlen)40, (ftnlen)4);
 /*     is there a continuation? */
 /*     finally we know not */

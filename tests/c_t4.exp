@@ -30,18 +30,18 @@ Warning on line 42 of t4tail.F: attempted division by zero
     a = 1.f;
 /*     about to include t4inc1.f */
 /*<       include 't4inc1.f' >*/
-/*<       b = 2 >*/
 /*     set i1 */
+/*<       i1 = 11 >*/
     i1 = 11;
 /*     i1 was set */
-/*<       i1 = 11 >*/
 /*     after first include? */
+/*<       b = 2 >*/
     b = 2.f;
 /*<       include 't4inc2.f' >*/
-/*<       c = 3 >*/
+/*<       i2 = 22                                     ! catch >*/
     i2 = 22;
 /* end of second include */
-/*<       i2 = 22                                     ! catch >*/
+/*<       c = 3 >*/
     c__ = 3.f;
 /*<       d = 1 / 0 >*/
     d__ = (real) (1 / 0);

@@ -37,13 +37,17 @@ static integer c__3 = 3;
 
 /*<       integer bar >*/
 /*     Show initial value */
-/*<        >*/
+/*<       write(*,*) 'Bar =', >*/
+/*<      $     bar >*/
 /* L12: */
     s_wsle(&io___1);
     do_lio(&c__9, &c__1, "Bar =", (ftnlen)5);
     do_lio(&c__3, &c__1, (char *)&(*bar), (ftnlen)sizeof(integer));
     e_wsle();
-/*<        >*/
+/*<       bar = >*/
+/*<      $     bar >*/
+/*<      $     * 2 >*/
+/*<      $     + 1 >*/
     *bar = (*bar << 1) + 1;
 /*     Think of a number */
 /*     double it */

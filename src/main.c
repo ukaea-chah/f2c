@@ -77,6 +77,7 @@ static char *def_i2 = "";
 static int useshortints = NO;	/* YES => tyint = TYSHORT */
 static int uselongints = NO;	/* YES => tyint = TYLONG */
 int addftnsrc = NO;		/* Include ftn source in output */
+int addftnincl = YES;		/* ... and also for includes */
 int usedefsforcommon = NO;	/* Use #defines for common reference */
 int forcedouble = YES;		/* force real functions to double */
 int dneg = NO;			/* f77 treatment of unary minus */
@@ -129,6 +130,7 @@ static arg_info table[] = {
     f2c_entry ("NC", P_ONE_ARG, P_INT, &maxcontin, 0),
     f2c_entry ("Nl", P_ONE_ARG, P_INT, &maxlablist, 0),
     f2c_entry ("c", P_NO_ARGS, P_INT, &addftnsrc, YES),
+    f2c_entry ("!ci", P_NO_ARGS, P_INT, &addftnincl, NO),    
     f2c_entry ("p", P_NO_ARGS, P_INT, &usedefsforcommon, YES),
     f2c_entry ("R", P_NO_ARGS, P_INT, &forcedouble, NO),
     f2c_entry ("!R", P_NO_ARGS, P_INT, &forcedouble, YES),

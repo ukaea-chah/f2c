@@ -134,6 +134,7 @@ LOCAL int nincl	= 0;	/* Current number of include files */
 LOCAL long firstline;
 LOCAL char *infname1, *infname2, *laststb, *stb0;
 extern int addftnsrc;
+extern int addftnincl;
 static char **linestart;
 LOCAL int ncont;
 LOCAL char comstart[Table_size];
@@ -231,6 +232,7 @@ struct Inclfile
 	ftnint inclstno;		/* statement label */
 	Slist inclcom;			/* comments */
 	Slist inclsrc;			/* source lines */
+	int inclftn;			/* include fortran source */
 };
 
 LOCAL struct Inclfile *inclp	=  NULL;
@@ -427,6 +429,8 @@ doinclude(char *name)
 		slist_init(&com);
 		inclp->inclsrc = src;
 		slist_init(&src);
+		inclp->inclftn = addftnsrc;
+		addftnsrc = addftnsrc & addftnincl;
 	}
 	nextcd = NULL;
 
@@ -562,6 +566,7 @@ popinclude(Void)
 	}
 	else
 		nextcd = NULL;
+	addftnsrc = inclp->inclftn;
 	return(YES);
 }
 

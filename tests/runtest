@@ -7,6 +7,9 @@ TEST=$1
 OUT=$TEST.out
 opts=
 case "$TEST" in
+    ci_*)
+	opts="$opts -c -!ci"
+	;;
     c_*)
 	opts="$opts -c"
 	;;
